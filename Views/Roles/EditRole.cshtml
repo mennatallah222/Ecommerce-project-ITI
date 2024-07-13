@@ -1,0 +1,26 @@
+﻿@model EditRoleViewModel
+
+<h2>Edit Role</h2>
+
+@{
+    ViewData["Title"] = "Edit Role";
+}
+
+<form method="post" asp-action="EditRole" asp-controller="Roles">
+    <input asp-for="Id" type="hidden" />
+
+
+    <div class="form-group">
+        <label asp-for="Name"></label>
+        <input asp-for="Name" class="form-control" maxlength="100" />
+        <span asp-validation-for="Name" class="text-danger"></span>
+    </div>
+
+
+    <button type="submit" class="btn btn-primary d-block mt-4">Update</button>
+    <a asp-action="Index" class="btn badge-dark">Cancel</a>
+</form>
+
+    @section Scripts {
+        <partial name="_ValidationScriptsPartial" />
+    }

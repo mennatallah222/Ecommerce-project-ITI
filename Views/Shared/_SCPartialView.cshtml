@@ -1,0 +1,76 @@
+﻿@using project01.Models
+@using Microsoft.AspNetCore.Http
+@using Newtonsoft.Json
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+@{
+    var cartJson = Context.Request.HttpContext.Session.GetString("cart");
+    var cartItems = !string.IsNullOrEmpty(cartJson) ? JsonConvert.DeserializeObject<List<Item>>(cartJson) : new List<Item>();
+}
+@if (cartItems.Count > 0)
+{
+    <h1>Your Cart</h1>
+    <table class="table">
+        <thead>
+            <tr>
+                <th></th>
+                <th>Product</th>
+                <th>Price</th>
+                <th>Quantity</th>
+                <th>Total amount</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in cartItems)
+            {
+                <tr>
+                    <td>
+                        @if (item.Product.ProductPicture != null && item.Product.ProductPicture.Length > 0)
+                        {
+                            <img src="data:image/*;base64,@Convert.ToBase64String(item.Product.ProductPicture)" class="card-img-top" alt="Product Image" style="width: 40px; height: 40px;" />
+                        }
+                        else
+                        {
+                            <div class="card-img-top default-image">Image is not Available</div>
+                        }
+                    </td>
+                    <td>@item.Product.Name</td>
+                    <td>$@item.Product.Price</td>
+                    <td>@item.Quantity</td>
+                    <td></td>
+                    <td>
+                        <a href="@Url.Action("RemoveFromCart", "ShoppingCart", new { @id = item.Product.Id })" class="btn btn-outline-danger">Remove</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="4"></td>
+                <td>$@cartItems.Sum(item => item.Product.Price * item.Quantity)</td>
+            </tr>
+        </tfoot>
+    </table>
+
+    <div>
+        <a class="btn btn-dark mt-3" asp-action="Index" asp-controller="Home">Continue Shopping</a>
+    </div>
+
+
+    @if (User.Identity.IsAuthenticated)
+    {
+        <a class="btn btn-dark mt-3" href="@Url.Action("Index", "Checkout")">Procceed to checkout</a>
+    }
+    else
+    {
+        <p><a class="btn btn-dark mt-2 text-center" asp-area="Identity" asp-page="/Account/Login">log in</a>  to complete your purchase</p>
+    }
+}
+else
+{
+    <div class="alert alert-danger" role="alert">
+        Your cart is empty
+    </div>
+}

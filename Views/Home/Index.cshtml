@@ -1,0 +1,144 @@
+﻿
+@model List<project01.Models.Product>
+
+@{
+    ViewData["Title"] = "Home Page";
+}
+
+
+<div class="floating-message" id="floatingSuccessMessage">
+    Product added to the cart successfully.
+</div>
+<div class="floating-message" id="floatingErrorMessage">
+    An error occurred while adding the product to the cart.
+</div>
+
+
+
+
+
+<div class="container">
+    <div class="row">
+        <div class="col-lg-6">
+            <div class="section-heading d-flex justify-content-center">
+                <h2>Available Products</h2>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        @foreach (var item in Model)
+        {
+            <div class="col-md-4 mb-3">
+                <div class="card">
+                    <div class="card-body" style="height: 400px; overflow: hidden;">
+                        <div class="d-flex justify-content-center">
+                            @if (item.ProductPicture != null && item.ProductPicture.Length > 0)
+                            {
+                                <img src="data:image/*;base64,@Convert.ToBase64String(item.ProductPicture)" class="card-img-top" alt="Product Image" style="max-width: 150px; max-height: 150px;" />
+                            }
+                            else
+                            {
+                                <div class="card-img-top default-image">Image is not Available</div>
+                            }
+                        </div>
+                        <h5 class="card-title d-flex justify-content-center">@item.Name</h5>
+
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item">Price: $@item.Price</li>
+                            @if (item.Quantity == 0)
+                            {
+                                <li class="list-group-item">
+                                    <div class="alert alert-warning">This product is out of stock.</div>
+                                </li>
+                            }
+                            else
+                            {
+                                <li class="list-group-item">Quantity (@item.Quantity)</li>
+                            }
+                        </ul>
+                        <a asp-action="Details" asp-controller="Product" asp-route-id="@item.Id" class="btn btn-outline-dark">read more</a>
+
+                        <form method="post" asp-action="AddToCart" asp-controller="ShoppingCart" asp-route-productId="@item.Id">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="productId" value="@item.Id" />
+                            <button type="submit" class="btn btn-outline-success btn-block mt-3"
+                                    data-quantity="@item.Quantity" @if (item.Quantity == 0||!User.IsInRole("Customer")) { <text> disabled</text> }>
+                                Add to Cart
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+<script>
+    var addToCartButtons = document.querySelectorAll('button[data-quantity]');
+    var floatingSuccessMessage = document.getElementById('floatingSuccessMessage');
+    var floatingErrorMessage = document.getElementById('floatingErrorMessage');
+
+    addToCartButtons.forEach(function (button) {
+        button.addEventListener('click', function (event) {
+            var quantity = parseInt(button.getAttribute('data-quantity'));
+            if (quantity === 0) {
+                alert("This product is out of stock.");
+                event.preventDefault();
+            } else {
+                event.preventDefault();
+
+                var form = button.closest('form');
+                var formData = new FormData(form);
+
+                fetch(form.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            showFloatingMessage(floatingSuccessMessage);
+                        } else {
+                            showFloatingMessage(floatingErrorMessage, true);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        showFloatingMessage(floatingErrorMessage, true);
+                    });
+            }
+        });
+    });
+
+    function showFloatingMessage(element, isError = false) {
+        element.style.display = 'block';
+        if (isError) {
+            element.classList.add('error');
+        } else {
+            element.classList.remove('error');
+        }
+        setTimeout(function () {
+            element.style.display = 'none';
+        }, 3000); 
+    }
+</script>
+<style>
+
+    .floating-message {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        padding: 10px;
+        background-color: rgba(0, 128, 0, 0.8);
+        color: #fff;
+        border-radius: 5px;
+        z-index: 9999;
+        display: none;
+    }
+
+        .floating-message.error {
+            background-color: rgba(255, 0, 0, 0.8);
+        }
+</style>

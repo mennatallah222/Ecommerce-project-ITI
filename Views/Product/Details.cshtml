@@ -1,0 +1,118 @@
+﻿@model Product
+
+<div class="container">
+    <h1 class="my-4">Product Details</h1>
+
+    <div class="row">
+        <div class="col-md-4">
+            @if (Model.ProductPicture != null && Model.ProductPicture.Length > 0)
+            {
+                <img src="data:image/*;base64,@Convert.ToBase64String(Model.ProductPicture)" class="img-fluid" alt="Product Image" />
+            }
+            else
+            {
+                <div class="default-image">Image is not Available</div>
+            }
+        </div>
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">@Model.Name</h5>
+                    <p class="card-text">@Model.Description</p>
+                    <p class="card-text">Price: $@Model.Price</p>
+                    <p class="card-text">Quantity: @Model.Quantity</p>
+
+                    @if (User.IsInRole("Admin"))
+                    {
+                        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-outline-success">Edit</a>
+                        <a asp-action="Delete" asp-route-id="@Model.Id" class="btn btn-outline-danger">Delete</a>
+                    }
+                    @if (User.IsInRole("Customer"))
+                    {
+                        <form method="post" asp-action="AddToCart" asp-controller="ShoppingCart" asp-route-id="@Model.Id">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="productId" value="@Model.Id" />
+                            <button type="submit" class="btn btn-outline-success btn-block mt-3"
+                                    data-quantity="@Model.Quantity" @if (Model.Quantity == 0) { <text> disabled</text> }>
+                                Add to Cart
+                            </button>
+                        </form>
+                    }
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script>
+    var addToCartButtons = document.querySelectorAll('button[data-quantity]');
+    var floatingSuccessMessage = document.getElementById('floatingSuccessMessage');
+    var floatingErrorMessage = document.getElementById('floatingErrorMessage');
+
+    addToCartButtons.forEach(function (button) {
+        button.addEventListener('click', function (event) {
+            var quantity = parseInt(button.getAttribute('data-quantity'));
+            if (quantity === 0) {
+                alert("This product is out of stock.");
+                event.preventDefault();
+            } else {
+                event.preventDefault();
+
+                var form = button.closest('form');
+                var formData = new FormData(form);
+
+                fetch(form.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            showFloatingMessage(floatingSuccessMessage);
+                        } else {
+                            showFloatingMessage(floatingErrorMessage, true);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        showFloatingMessage(floatingErrorMessage, true);
+                    });
+            }
+        });
+    });
+
+    function showFloatingMessage(element, isError = false) {
+        element.style.display = 'block';
+        if (isError) {
+            element.classList.add('error');
+        } else {
+            element.classList.remove('error');
+        }
+        setTimeout(function () {
+            element.style.display = 'none';
+        }, 3000);
+    }
+</script>
+<style>
+
+    .floating-message {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        padding: 10px;
+        background-color: rgba(0, 128, 0, 0.8);
+        color: #fff;
+        border-radius: 5px;
+        z-index: 9999;
+        display: none;
+    }
+
+        .floating-message.error {
+            background-color: rgba(255, 0, 0, 0.8);
+        }
+</style>
